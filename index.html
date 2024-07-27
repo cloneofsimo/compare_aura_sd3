@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Gallery</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .description-box {
+            border-left: 4px solid #007bff;
+            padding: 10px;
+            margin-bottom: 20px;
+            background-color: #f8f9fa;
+        }
+        .image-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .image-card {
+            width: calc(25% - 15px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+            cursor: pointer;
+        }
+        .image-card:hover {
+            transform: scale(1.05);
+        }
+        .image-card img {
+            width: 100%;
+            height: auto;
+        }
+        .image-info {
+            padding: 10px;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.9);
+        }
+        .modal-content {
+            margin: auto;
+            display: block;
+            width: 80%;
+            max-width: 800px;
+        }
+        .close {
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            position: absolute;
+            right: 35px;
+            top: 15px;
+            cursor: pointer;
+        }
+        .auraflow-description {
+            background-color: #f0f0f0;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="auraflow-description">
+            <h2>Vibe Check AuraFlow-v0.2 vs Others, on Extremely Complex Prompts</h2>
+            <p>You can learn more about AuraFlow <a href="https://blog.fal.ai/auraflow/">here</a>.</p>
+            <p><strong>Note:</strong></p>
+            <ul>
+                <li>This is not meant to be an exhaustive benchmark or sort.</li>
+                <li>Code to generate these images can be found <a href="https://gist.github.com/cloneofsimo/525bcbf30b6f0185a30181e6ef46d562">here</a> (note: not deterministic)</li>
+                <li>Code to generate these prompts can be found <a href="https://gist.github.com/cloneofsimo/b50f159ad7588ef41f2abeee9aee0df3">here</a>. (note: not deterministic)</li>
+            </ul>
+        </div>
+
+        <div id="gallery"></div>
+    </div>
+
+    <div id="imageModal" class="modal">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <img class="modal-content" id="modalImage">
+    </div>
+
+    <script>
+        let imageData = {};
+
+        function loadImageData() {
+            fetch('image_data.json')
+                .then(response => response.json())
+                .then(data => {
+                    imageData = data;
+                    createGallery();
+                })
+                .catch(error => console.error('Error loading image data:', error));
+        }
+
+        function groupImagesByDescription(data) {
+            const grouped = {};
+            for (const [filename, details] of Object.entries(data)) {
+                if (!grouped[details.description]) {
+                    grouped[details.description] = [];
+                }
+                grouped[details.description].push({ filename, details });
+            }
+            return grouped;
+        }
+
+        function createGallery() {
+            const gallery = document.getElementById('gallery');
+            const groupedImages = groupImagesByDescription(imageData);
+
+            for (const [description, images] of Object.entries(groupedImages)) {
+                const descriptionBox = document.createElement('div');
+                descriptionBox.className = 'description-box';
+                descriptionBox.innerHTML = `
+                    <h2>Prompt Description</h2>
+                    <p>${description}</p>
+                `;
+                gallery.appendChild(descriptionBox);
+
+                const imageGrid = document.createElement('div');
+                imageGrid.className = 'image-grid';
+
+                images.forEach(({ filename, details }) => {
+                    const card = document.createElement('div');
+                    card.className = 'image-card';
+                    card.innerHTML = `
+                        <img src="${filename}.webp" alt="${details.model}" onclick="openModal('${filename}.higher.webp')">
+                        <div class="image-info">
+                            <p>Model: ${details.model}</p>
+                        </div>
+                    `;
+                    imageGrid.appendChild(card);
+                });
+
+                gallery.appendChild(imageGrid);
+            }
+        }
+
+        function openModal(imageSrc) {
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            modal.style.display = "block";
+            modalImg.src = imageSrc;
+        }
+
+        function closeModal() {
+            document.getElementById('imageModal').style.display = "none";
+        }
+
+        // Call this function when the page loads
+        loadImageData();
+    </script>
+</body>
+</html>
